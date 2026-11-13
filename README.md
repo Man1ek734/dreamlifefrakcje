@@ -49,3 +49,7 @@ Bot nie tworzy juz zadnych nowych kanalow pojazdow. Korzysta wylacznie z pierwsz
 W katalogu zostaje tylko pierwszy komplet szesciu kanalow; 12 znanych duplikatow poprzedniego bota jest usuwanych po starcie. Bot nie tworzy ponownie kategorii zakupow ani kanalow pojazdow. Ceny IC wszystkich 53 pojazdow zwiekszono o 15% i zaokraglono do 100 $. Edycja postow nie usuwa ich fotografii.
 
 Nowe tickety maja nazwy `ticket-1`, `ticket-2` itd. Nastepny numer jest rezerwowany i zapisywany w temacie istniejacego kanalu panelu (pole `dlshop-next:N`), dlatego nie resetuje sie po zamknieciu ticketu ani po restarcie bota. Kazdy czlonek majacy dostep do ticketu moze go zamknac przyciskiem po potwierdzeniu.
+
+### Zapobieganie duplikatom (listopad 2026)
+
+Synchronizacja nie tworzy ŻADNYCH nowych kanałów ani automatycznych postów w katalogu aut. Pozostawia 6 pierwotnych kanałów (stałe ID), usuwa dodatkowe kanały w naszej kategorii z własnym podpisem tematu i usuwa nadmiarowe wiadomości bota dla tego samego modelu, pozostawiając wpis z największą liczbą zdjęć. Nie usuwa postów użytkowników. Weryfikacja widoczna w logach `[AUDYT]`, `[PORZADEK]` i `[DEDUPE]`.

@@ -81,9 +81,12 @@ function duplicateMadeByBot(channel) {
     return false;
   }
   if (Object.values(KEEP).includes(channel.id)) return false;
-  // Usuwamy tylko 12 udokumentowanych duplikatów utworzonych przez tę aplikację.
-  // Nie dotykamy innych kanałów, nawet jeśli mają identyczną nazwę.
-  return KNOWN_EXTRA.has(channel.id);
+  // Wszystkie kopie stworzone przez starsze wersje aplikacji maja jej podpis
+  // w temacie kanalu. Blokada jest ograniczona do NASZEJ kategorii i tylko
+  // do szesciu znanych rodzajow pojazdow. Nigdy nie usuwa pierwszych 6.
+  const authored = GROUPS.some(g =>
+    channel.topic === 'Katalog pojazdów • ' + g.slug + ' • Noisiak Store');
+  return KNOWN_EXTRA.has(channel.id) || authored;
 }
 
 export async function ensureVehicleGallery(guild) {
@@ -121,10 +124,15 @@ export async function ensureVehicleGallery(guild) {
       console.error('[PORZADEK] Nie mozna usunac ' + channel.id + ': ' + e.message);
     }
   }
+  const refreshedChannels = await guild.channels.fetch();
+  const remainingInCategory = [...refreshedChannels.values()].filter(c =>
+    c?.type === ChannelType.GuildText && c.parentId === MANAGED_CATEGORY_ID);
+  console.log('[AUDYT] Kanaly w kategorii pojazdow po czyszczeniu: ' +
+    remainingInCategory.map(c => c.name + ' (' + c.id + ')').join(' | '));
   console.log('[PORZADEK] Usuniete duplikaty: ' + deleted +
     ', bledy: ' + deleteFailed + '. Tworzenie kanalow jest wylaczone.');
 
-  let posted = 0, updated = 0, skipped = 0, failed = 0;
+  let posted = 0, updated = 0, skipped = 0, failed = 0, removedMessages = 0;
   for (const group of GROUPS) {
     const originalId = KEEP[group.slug];
     const channel = await guild.channels.fetch(originalId).catch(() => null);
@@ -158,7 +166,26 @@ export async function ensureVehicleGallery(guild) {
       const price = prices[product.name];
       const desired = titleOf(product.name, price);
       const marker = codeFence + '\n' + product.name + '\n';
-      const previous = own.find(m => m.content.startsWith(marker));
+      // Deduplikacja tylko postow NASZEGO BOTA i tylko o tym samym modelu.
+      const copies = [...own.filter(m => m.content.startsWith(marker)).values()]
+        .sort((a, b) => {
+          const qualityA = a.attachments.size + a.embeds.length;
+          const qualityB = b.attachments.size + b.embeds.length;
+          if (qualityA !== qualityB) return qualityB - qualityA;
+          return a.createdTimestamp - b.createdTimestamp;
+        });
+      const previous = copies[0];
+      for (const duplicate of copies.slice(1)) {
+        try {
+          await duplicate.delete();
+          removedMessages++;
+          console.log('[DEDUPE] Usunieto dodatkowy wpis: ' + product.name +
+            ' (' + duplicate.id + ')');
+        } catch (error) {
+          failed++;
+          console.error('[DEDUPE] Nie usunieto ' + duplicate.id + ': ' + error.message);
+        }
+      }
       if (previous) {
         if (previous.content.trim() === desired.trim()) { skipped++; continue; }
         try {
@@ -173,30 +200,17 @@ export async function ensureVehicleGallery(guild) {
         continue;
       }
 
-      // Wyjątkowo wyslij NOWY wpis do ORYGINALNEGO kanalu,
-      // tylko gdy nie istnieje wpis o danym samochodzie.
-      try {
-        const files = await makeAttachments(product);
-        if (files.length) {
-          await channel.send({ content: desired, files, allowedMentions: { parse: [] } });
-        } else if (validImage(product.cover)) {
-          const embed = new EmbedBuilder().setColor(0x2563eb)
-            .setImage(product.cover).setURL(product.url);
-          await channel.send({ content: desired, embeds: [embed], allowedMentions: { parse: [] } });
-        } else {
-          throw new Error('Brak zdjecia pojazdu');
-        }
-        posted++;
-        console.log('[POJAZDY] Brakujacy wpis: ' + product.name + ' -> ' + channel.id);
-      } catch (error) {
-        failed++;
-        console.error('[POJAZDY] Blad dodawania ' + product.name + ': ' + error.message);
-      }
+      // Brakujacy wpis jest tylko raportowany. Nie publikujemy nic automatycznie,
+      // zeby restart ani cykliczna synchronizacja nie tworzyly nowych kopii.
+      console.log('[BEZ AUTOPOST] Brak wpisu ' + product.name +
+        ' w ' + channel.id + '; wymagana reczna publikacja.');
+      failed++;
     }
   }
   console.log('[POJAZDY] GOTOWE: usunieto-duplikatow=' + deleted +
-    ', ceny-zmieniono=' + updated + ', nowo-wyslane=' + posted +
-    ', pominiete=' + skipped + ', bledy=' + failed + ', bledy-usuwania=' + deleteFailed);
-  return { ready: failed + deleteFailed === 0, deleted, updated, posted, skipped,
+    ', ceny-zmieniono=' + updated + ', usuniete-posty=' + removedMessages +
+    ', nowo-wyslane=' + posted + ', pominiete=' + skipped + ', bledy=' +
+    failed + ', bledy-usuwania=' + deleteFailed);
+  return { ready: failed + deleteFailed === 0, deleted, updated, removedMessages, posted, skipped,
     failed: failed + deleteFailed, channels: KEEP };
 }
