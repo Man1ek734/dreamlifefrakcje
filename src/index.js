@@ -102,7 +102,7 @@ async function start() {
       state.galleryPublished = gallery.posted;
       state.galleryFailed = gallery.failed || 0;
       console.log('[KATALOG] Udostepniono galerie pojazdow: ' +
-        (gallery.posted + (gallery.skipped || 0)) + ' z 53 modeli.');
+        (gallery.posted + (gallery.updated || 0) + (gallery.skipped || 0)) + ' z 53 modeli.');
     } catch (error) {
       state.inGuild = false;
       state.shopReady = false;

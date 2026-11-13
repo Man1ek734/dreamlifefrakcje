@@ -39,3 +39,7 @@ Lista pojazdów w data/vehicles.json pozostaje robocza, bez automatycznej publik
 Pełne 53 modele z kategorii Noisiak Store są w `data/product_gallery.json`. Dodatkowa kategoria `pojazdy-transportowe` mieści Burrito. Przy uruchomieniu bot tworzy (albo odnajduje) kategorię `━━ 🚘・POJAZDY FRAKCYJNE ━━` i sześć kanałów, zachowując istniejące nazwy. Każdy model wysyła jako osobny wpis: ramka z nazwą oraz rzeczywiste zdjęcia od autora (1–3 obrazy, zależnie od dostępności). Obrazki są kompresowane do JPEG i publikowane jako załączniki, dzięki czemu Discord układa je obok siebie. Wpisy nie są duplikowane po restarcie; sprawdzane są wiadomości własnego bota.
 
 Status online bota pozostaje bez widocznej aktywności tekstowej.
+
+## Bez duplikowania kategorii (2026-11-13)
+
+Bot nie tworzy juz zadnych nowych kanalow pojazdow. Korzysta wylacznie z pierwszego kompletu szesciu kanalow o zapisanych identyfikatorach. Kanaly powielone przez poprzednia wersje (wewnatrz kategorii POJAZDY FRAKCYJNE) sa automatycznie usuwane. Oryginalne wpisy zachowuja zalaczniki ze zdjeciami, bot tylko dopisuje w tresci ceny IC. Jesli brakuje wpisu, zostanie wyslany jedynie do oryginalnego kanalu. Cennik mozna edytowac w data/prices_ic.json; sa to ceny wirtualne wewnatrz gry, nie ceny realne sklepu.

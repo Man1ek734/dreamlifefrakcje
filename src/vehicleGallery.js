@@ -1,7 +1,7 @@
 import { AttachmentBuilder, ChannelType, EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import sharp from 'sharp';
 import catalogue from '../data/product_gallery.json' with { type: 'json' };
-import { detectChannelSlug } from './catalog.js';
+import prices from '../data/prices_ic.json' with { type: 'json' };
 
 const CATEGORY_NAME = '━━ 🚘・POJAZDY FRAKCYJNE ━━';
 const GROUPS = [
@@ -18,7 +18,7 @@ const ALLOW_BOT = [
   PermissionFlagsBits.AttachFiles
 ];
 const codeFence = String.fromCharCode(96).repeat(3);
-const titleOf = (name) => codeFence + '\n' + name + '\n' + codeFence;
+const titleOf = (name, price) => codeFence + '\n' + name + '\nCena IC: 
 
 function isGroup(channel, slug) {
   if (!channel || channel.type !== ChannelType.GuildText) return false;
@@ -64,107 +64,148 @@ async function makeAttachments(product) {
   return out;
 }
 
+// Pierwszy komplet szesciu kanalow, utworzony 13.11.2026.
+// ZACHOWAJ: sa tu oryginalne galerie, nie wolno ich usuwac.
+const KEEP = Object.freeze({
+  'off-road': '1570875064482668581',
+  'sedany': '1570875066906972180',
+  'coupe': '1570875067813072946',
+  'musclecar': '1570875068819579071',
+  'pojazdy-sportowe': '1570875069821882661',
+  'pojazdy-transportowe': '1570875070773985320'
+});
+const MANAGED_CATEGORY_ID = '1570875062335307786';
+const KNOWN_EXTRA = new Set([
+  '1570875566385659974', '1570875568084353086',
+  '1570875570504597635', '1570875571968155759',
+  '1570875572891033770', '1570875574354710620',
+  '1570876068372418590', '1570876070176104509',
+  '1570876073263239380', '1570876074408149054',
+  '1570876075775631454', '1570876085460144149'
+]);
+
+function duplicateMadeByBot(channel) {
+  if (channel?.type !== ChannelType.GuildText || channel.parentId !== MANAGED_CATEGORY_ID) {
+    return false;
+  }
+  if (Object.values(KEEP).includes(channel.id)) return false;
+  if (KNOWN_EXTRA.has(channel.id)) return true;
+  // Tylko wzor nazw automatycznie nadany przez poprzednia wersje bota.
+  return GROUPS.some(g => channel.name === g.emoji + '--' + g.slug ||
+    channel.name === g.emoji + '│' + g.slug);
+}
+
 export async function ensureVehicleGallery(guild) {
+  // Żadna sciezka w tej funkcji nie tworzy ani nie przesuwa kanalow.
+  // Nigdy nie tworz nowych kategorii ani nowych kanalow.
   const me = await guild.members.fetchMe();
-  if (!me.permissions.has(PermissionFlagsBits.ManageChannels)) {
-    console.log('[POJAZDY] Brak Manage Channels. Zatrzymano.');
-    return { ready: false, posted: 0, reason: 'Missing ManageChannels' };
-  }
-  const products = catalogue.products;
-  if (products.length !== 53 || new Set(products.map(x => x.id)).size !== 53) {
-    throw new Error('Zbior pojazdow wymaga weryfikacji');
-  }
-  let all = await guild.channels.fetch();
-  let category = all.find(x => x?.type === ChannelType.GuildCategory &&
-    (x.name === CATEGORY_NAME || /POJAZDY FRAKCYJNE/i.test(x.name)));
-  if (!category) {
-    category = await guild.channels.create({ name: CATEGORY_NAME,
-      type: ChannelType.GuildCategory, reason: 'Katalog pojazdow DreamLife Frakcje' });
-    console.log('[POJAZDY] Utworzono kategorie: ' + category.id);
-  }
-  all = await guild.channels.fetch();
-  const mapping = new Map();
-  for (const group of GROUPS) {
-    let channel = all.find(x => isGroup(x, group.slug));
-    if (!channel) {
-      channel = await guild.channels.create({
-        name: group.emoji + '│' + group.slug,
-        type: ChannelType.GuildText, parent: category.id,
-        topic: 'Katalog pojazdów • ' + group.slug + ' • Noisiak Store',
-        permissionOverwrites: [{ id: guild.client.user.id, allow: ALLOW_BOT }],
-        reason: 'Katalog samochodow frakcyjnych wedlug typu'
-      });
-      console.log('[POJAZDY] Kanal ' + group.slug + ' utworzony: ' + channel.id);
-    } else {
-      console.log('[POJAZDY] Uzywam istniejacego ' + channel.name);
-    }
-    if (channel.parentId === category.id && channel.name === group.emoji + '--' + group.slug) {
-      channel = await channel.setName(group.emoji + '│' + group.slug,
-        'Wyrownanie wygladu nowo utworzonych kanalow pojazdow');
-      console.log('[POJAZDY] Poprawiono nazwe: ' + channel.name);
-    }
-    mapping.set(group.slug, channel);
+  if (!me.permissions.has(PermissionFlagsBits.ViewChannel)) {
+    return { ready: false, posted: 0, updated: 0, deleted: 0, failed: 53,
+      reason: 'No ViewChannel permission' };
   }
 
-  let posted = 0, skipped = 0, failed = 0;
-  for (const group of GROUPS) {
-    const channel = mapping.get(group.slug);
-    const groupProducts = products.filter(x => x.category === group.slug);
-    const perms = channel.permissionsFor(me);
-    if (!perms?.has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages,
-      PermissionFlagsBits.ReadMessageHistory])) {
-      failed += groupProducts.length;
-      console.warn('[POJAZDY] Brak uprawnien w ' + channel.name);
+  const products = catalogue.products;
+  if (products.length !== 53 || new Set(products.map(p => p.id)).size !== 53 ||
+      products.some(p => !Number.isInteger(prices[p.name]) || prices[p.name] <= 0)) {
+    throw new Error('Katalog albo cennik IC jest niekompletny');
+  }
+
+  const all = await guild.channels.fetch();
+  let deleted = 0, deleteFailed = 0;
+  for (const channel of all.values()) {
+    if (!duplicateMadeByBot(channel)) continue;
+    if (!me.permissions.has(PermissionFlagsBits.ManageChannels)) {
+      console.log('[PORZADEK] Brak ManageChannels; pomijam usuniecie ' + channel.id);
+      deleteFailed++;
       continue;
     }
-    if (!perms.has(PermissionFlagsBits.AttachFiles)) {
-      try {
-        await channel.permissionOverwrites.edit(guild.client.user.id,
-          { AttachFiles: true, SendMessages: true, ViewChannel: true,
-            ReadMessageHistory: true, EmbedLinks: true },
-          { reason: 'Zdjecia pojazdow w katalogu DreamLife' });
-      } catch (error) {
-        console.warn('[POJAZDY] Nie mozna wlaczyc zalacznikow: ' + error.message);
-      }
+    try {
+      // Ochrona przed usunieciem pierwszego kompletu.
+      if (Object.values(KEEP).includes(channel.id)) continue;
+      await channel.delete('Usuniecie powielonego kanalu stworzonego przez bota');
+      deleted++;
+      console.log('[PORZADEK] Usunieto DUPLIKAT ' + channel.name + ' (' + channel.id + ')');
+    } catch (e) {
+      deleteFailed++;
+      console.error('[PORZADEK] Nie mozna usunac ' + channel.id + ': ' + e.message);
+    }
+  }
+  console.log('[PORZADEK] Usuniete duplikaty: ' + deleted +
+    ', bledy: ' + deleteFailed + '. Tworzenie kanalow jest wylaczone.');
+
+  let posted = 0, updated = 0, skipped = 0, failed = 0;
+  for (const group of GROUPS) {
+    const originalId = KEEP[group.slug];
+    const channel = await guild.channels.fetch(originalId).catch(() => null);
+    const selected = products.filter(p => p.category === group.slug);
+    if (!channel || channel.type !== ChannelType.GuildText ||
+        channel.parentId !== MANAGED_CATEGORY_ID) {
+      console.error('[POJAZDY] Brak oryginalnego kanalu ' + group.slug +
+        ' (' + originalId + '). Nie tworze nowego.');
+      failed += selected.length;
+      continue;
+    }
+    const permissions = channel.permissionsFor(me);
+    if (!permissions?.has([PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory])) {
+      console.error('[POJAZDY] Brak dostepu do kanalu ' + channel.id);
+      failed += selected.length;
+      continue;
     }
 
     let messages;
-    try { messages = await channel.messages.fetch({ limit: 100 }); }
-    catch (error) {
-      failed += groupProducts.length;
-      console.warn('[POJAZDY] Odczyt ' + channel.name + ': ' + error.message);
+    try {
+      messages = await channel.messages.fetch({ limit: 100 });
+    } catch (error) {
+      console.error('[POJAZDY] Nie mozna odczytac ' + channel.id + ': ' + error.message);
+      failed += selected.length;
       continue;
     }
-    const seen = new Set(messages
-      .filter(x => x.author.id === guild.client.user.id)
-      .map(x => x.content.trim()));
+    const own = messages.filter(m => m.author.id === guild.client.user.id);
 
-    for (const product of groupProducts) {
-      const content = titleOf(product.name);
-      if (seen.has(content.trim())) { skipped++; continue; }
+    for (const product of selected) {
+      const price = prices[product.name];
+      const desired = titleOf(product.name, price);
+      const marker = codeFence + '\n' + product.name + '\n';
+      const previous = own.find(m => m.content.startsWith(marker));
+      if (previous) {
+        if (previous.content.trim() === desired.trim()) { skipped++; continue; }
+        try {
+          // Edytowanie WYŁĄCZNIE tresci: istniejace zalaczniki (zdjecia) zostaja.
+          await previous.edit({ content: desired, allowedMentions: { parse: [] } });
+          updated++;
+          console.log('[CENA IC] ' + product.name + ': $' + price + ' (edycja wpisu)');
+        } catch (error) {
+          failed++;
+          console.error('[CENA IC] Nie udalo sie edytowac ' + product.name + ': ' + error.message);
+        }
+        continue;
+      }
+
+      // Wyjątkowo wyslij NOWY wpis do ORYGINALNEGO kanalu,
+      // tylko gdy nie istnieje wpis o danym samochodzie.
       try {
         const files = await makeAttachments(product);
         if (files.length) {
-          await channel.send({ content, files, allowedMentions: { parse: [] } });
+          await channel.send({ content: desired, files, allowedMentions: { parse: [] } });
         } else if (validImage(product.cover)) {
           const embed = new EmbedBuilder().setColor(0x2563eb)
             .setImage(product.cover).setURL(product.url);
-          await channel.send({ content, embeds: [embed], allowedMentions: { parse: [] } });
+          await channel.send({ content: desired, embeds: [embed], allowedMentions: { parse: [] } });
         } else {
-          throw new Error('Brak prawidlowej fotografii pojazdu');
+          throw new Error('Brak zdjecia pojazdu');
         }
-        seen.add(content.trim());
         posted++;
-        console.log('[POJAZDY] ' + channel.name + ': ' + product.name +
-          ' (' + files.length + ' zdjec)');
+        console.log('[POJAZDY] Brakujacy wpis: ' + product.name + ' -> ' + channel.id);
       } catch (error) {
         failed++;
-        console.error('[POJAZDY] Blad ' + product.name + ': ' + error.message);
+        console.error('[POJAZDY] Blad dodawania ' + product.name + ': ' + error.message);
       }
     }
   }
-  console.log('[POJAZDY] ZAKONCZONO: dodano=' + posted + ', pominieto=' +
-    skipped + ', bledy=' + failed + ', razem=' + products.length);
-  return { ready: failed === 0, posted, skipped, failed,
-    channels: Object.fromEntries([...mapping].map(([slug,c]) => [slug,c.id])) };
+  console.log('[POJAZDY] GOTOWE: usunieto-duplikatow=' + deleted +
+    ', ceny-zmieniono=' + updated + ', nowo-wyslane=' + posted +
+    ', pominiete=' + skipped + ', bledy=' + failed + ', bledy-usuwania=' + deleteFailed);
+  return { ready: failed + deleteFailed === 0, deleted, updated, posted, skipped,
+    failed: failed + deleteFailed, channels: KEEP };
 }
