@@ -61,3 +61,5 @@ Cennik pojazdów frakcyjnych podniesiono ponownie o 20% (zaokrąglenie do pełny
 ### Podwyżka cen (2026-11-13)
 
 Podniesiono ponownie wszystkie 53 ceny o 40% względem poprzednich kwot, zaokrąglając do 100. Etykieta w wiadomościach pozostaje `Cena:`. Obrazy i istniejące kanały nie są nadpisywane ani powielane.
+
+Wdrozenie cennika 40%: ponowienie buildu Railway po przejsciowym bledzie etapu BUILD_IMAGE.
