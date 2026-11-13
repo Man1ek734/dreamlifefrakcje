@@ -1,0 +1,87 @@
+{
+  "source": "https://store.noisiak.com/category/2957657",
+  "note": "Wstepny podzial z poprzedniej listy, wymaga sprawdzenia z aktualnym katalogiem. Nie jest publikowany na Discordzie.",
+  "categories": {
+    "off-road": {
+      "emoji": "🚙",
+      "vehicles": [
+        "Scout 2020",
+        "Scout 2013",
+        "Scout ST 2025",
+        "Dorado A/C",
+        "Yosemite 2500HD",
+        "Sadler LT-450 Super",
+        "Sadler LT-450",
+        "Bison XL",
+        "Warden",
+        "Landstalker XL",
+        "Cavalcade XL",
+        "Caracara 4x4",
+        "Terminus",
+        "Aleutian",
+        "Granger",
+        "Hellion"
+      ]
+    },
+    "sedany": {
+      "emoji": "🚘",
+      "vehicles": [
+        "Buffalo ST",
+        "Stanier",
+        "Merula",
+        "Torrence LE",
+        "Schyster PMP 700S",
+        "Tailgater S",
+        "Sentinel GTS",
+        "V-STR",
+        "Komoda",
+        "Omnis e-GT",
+        "Rhinehart",
+        "Minimus",
+        "Kuruma",
+        "Neon",
+        "Schafter V12",
+        "Fugitive",
+        "Buffalo S"
+      ]
+    },
+    "coupe": {
+      "emoji": "🏎️",
+      "vehicles": [
+        "8F Drafter",
+        "Vectre",
+        "Paragon S"
+      ]
+    },
+    "musclecar": {
+      "emoji": "🏁",
+      "vehicles": [
+        "Buffalo STX",
+        "Dominator GT DCL",
+        "Dominator GTX",
+        "Vigero ZX",
+        "Gauntlet Hellfire"
+      ]
+    },
+    "pojazdy-sportowe": {
+      "emoji": "🏎️",
+      "vehicles": [
+        "Ignus",
+        "Coquette D10",
+        "Obey 10F WB",
+        "Sultan RS",
+        "Comet S2",
+        "Banshee GTS",
+        "Jester R",
+        "Coquette"
+      ]
+    },
+    "pojazdy-transportowe": {
+      "emoji": "🚐",
+      "vehicles": [
+        "Burrito"
+      ],
+      "optional": true
+    }
+  }
+}

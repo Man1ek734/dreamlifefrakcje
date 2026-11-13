@@ -1,0 +1,17 @@
+{
+  "name": "dreamlifefrakcje",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Cichy bot Discord frakcji",
+  "engines": {
+    "node": ">=20.10"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "preview": "node src/index.js --preview",
+    "rename:preview": "node src/index.js --preview-emojis",
+    "rename:apply": "node src/index.js --apply-emojis",
+    "test": "node --test"
+  }
+}
