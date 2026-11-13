@@ -111,7 +111,7 @@ async function processJob(guild,job){
     embeds:[],
     allowedMentions:{parse:[]}
   });
-  const refreshed=await channel.messages.fetch(message.id);
+  const refreshed=await channel.messages.fetch({message:message.id,force:true});
   const names=[...refreshed.attachments.values()].map(a=>a.name);
   const success=names.length===files.length &&
     names.every(n=>n.startsWith('lspd-replacement-'));
