@@ -4,6 +4,7 @@ import { CHANNELS, MANAGED_SLUGS, makeReport } from './catalog.js';
 import { ensureShop, handleTicketInteraction } from './tickets.js';
 import { ensureVehicleGallery } from './vehicleGallery.js';
 import { ensureAlamoPhoto } from './alamoPhoto.js';
+import { auditVehicleImages } from './auditVehicleImages.js';
 
 const apiUrl = 'https://discord.com/api/v10';
 const token = process.env.DISCORD_BOT_TOKEN?.trim() || process.env.DISCORD_TOCKEN?.trim();
@@ -108,6 +109,10 @@ async function start() {
       const alamoPhoto = await ensureAlamoPhoto(guild);
       state.alamoPhotoUpdated = alamoPhoto.success;
       state.alamoPhotoMessageId = alamoPhoto.messageId || null;
+      if (!state.imageAuditCompleted){
+        state.imageAuditCompleted=true;
+        await auditVehicleImages(guild);
+      }
     } catch (error) {
       state.inGuild = false;
       state.shopReady = false;
