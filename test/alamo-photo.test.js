@@ -7,7 +7,7 @@ test('Alamo photo replacement only edits the original message', async () => {
   assert.ok(source.includes("const CHANNEL_ID = '1570875064482668581'"));
   assert.ok(source.includes("const MODEL = 'Alamo 2700LX'"));
   assert.ok(source.includes('await listing.edit('));
-  assert.ok(source.includes('attachments: []'));
+  assert.ok(source.includes('attachments: [{ id: 0, filename: FILENAME }]'));
   assert.ok(source.includes('files: [imageFile]'));
   assert.ok(source.includes('message.content.startsWith(HEADER)'));
   assert.equal(source.includes('.send('), false);

@@ -45,13 +45,16 @@ export async function ensureAlamoPhoto(guild) {
   // Keep vehicle title and current IC price exactly as before.
   await listing.edit({
     content: listing.content,
-    attachments: [],
+    // Discord API v10 wymaga podania nowego pliku również na liście attachments.
+    attachments: [{ id: 0, filename: FILENAME }],
     files: [imageFile],
     embeds: [],
     allowedMentions: { parse: [] }
   });
 
   const updated = await channel.messages.fetch(listing.id);
+  const mediaList = [...updated.attachments.values()].map(a => ({ name: a.name, size: a.size, contentType: a.contentType }));
+  console.log('[ALAMO DEBUG] Zalaczniki po edycji: ' + JSON.stringify(mediaList) + '; embedy=' + updated.embeds.length);
   const success = updated.attachments.size === 1 &&
     [...updated.attachments.values()][0].name === FILENAME;
   if (!success) {
