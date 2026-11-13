@@ -13,5 +13,7 @@ test('photo repair touches only existing Granger and Tempesta messages',async()=
  assert.match(s,/await message.edit\(/);
  assert.match(s,/scores\.every\(s=>s>=50\)/);
  assert.match(s,/no_placeholder_left/);
+ assert.ok(s.includes('attachments:[]'));
+ assert.equal(s.includes('attachmentRefs'),false);
  assert.match(s,/already_done/);
 });

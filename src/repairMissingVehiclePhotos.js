@@ -102,10 +102,11 @@ async function processJob(guild,job){
     }));
   }
 
-  const attachmentRefs=files.map((file,i)=>({id:i,filename:file.name}));
+  // Discord.js sam przypisuje ID nowym plikom. Pusta lista oznacza:
+  // usuń tylko dotychczasowe placeholdery i dodaj nowe pliki z "files".
   await message.edit({
     content:message.content,
-    attachments:attachmentRefs,
+    attachments:[],
     files,
     embeds:[],
     allowedMentions:{parse:[]}
