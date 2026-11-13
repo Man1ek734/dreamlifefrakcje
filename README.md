@@ -53,3 +53,7 @@ Nowe tickety maja nazwy `ticket-1`, `ticket-2` itd. Nastepny numer jest rezerwow
 ### Zapobieganie duplikatom (listopad 2026)
 
 Synchronizacja nie tworzy ŻADNYCH nowych kanałów ani automatycznych postów w katalogu aut. Pozostawia 6 pierwotnych kanałów (stałe ID), usuwa dodatkowe kanały w naszej kategorii z własnym podpisem tematu i usuwa nadmiarowe wiadomości bota dla tego samego modelu, pozostawiając wpis z największą liczbą zdjęć. Nie usuwa postów użytkowników. Weryfikacja widoczna w logach `[AUDYT]`, `[PORZADEK]` i `[DEDUPE]`.
+
+### Ceny (2026-11-13)
+
+Cennik pojazdów frakcyjnych podniesiono ponownie o 20% (zaokrąglenie do pełnych 100). W wiadomościach pojawia się teraz wyłącznie etykieta `Cena:`, bez dopisku `IC`. Bot edytuje istniejące 53 wiadomości, pozostawia zdjęcia i nie publikuje nowych postów ani nie tworzy kanałów.

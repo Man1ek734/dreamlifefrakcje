@@ -18,7 +18,7 @@ const ALLOW_BOT = [
   PermissionFlagsBits.AttachFiles
 ];
 const codeFence = String.fromCharCode(96).repeat(3);
-const titleOf = (name, price) => codeFence + '\n' + name + '\nCena IC: ' + String.fromCharCode(36) + price.toLocaleString('en-US').replaceAll(',', ' ') + '\n' + codeFence;
+const titleOf = (name, price) => codeFence + '\n' + name + '\nCena: ' + String.fromCharCode(36) + price.toLocaleString('en-US').replaceAll(',', ' ') + '\n' + codeFence;
 
 function validImage(url) {
   try {
