@@ -23,6 +23,8 @@ const titleOf = (name) => codeFence + '\n' + name + '\n' + codeFence;
 function isGroup(channel, slug) {
   if (!channel || channel.type !== ChannelType.GuildText) return false;
   if (detectChannelSlug(channel.name) === slug) return true;
+  const group = GROUPS.find(g => g.slug === slug);
+  if (group && channel.name === group.emoji + '--' + slug) return true;
   if (slug !== 'pojazdy-transportowe') return false;
   return channel.name.split(/[|│｜]/u).at(-1).trim() === slug;
 }
@@ -86,7 +88,7 @@ export async function ensureVehicleGallery(guild) {
     let channel = all.find(x => isGroup(x, group.slug));
     if (!channel) {
       channel = await guild.channels.create({
-        name: group.emoji + ' | ' + group.slug,
+        name: group.emoji + '│' + group.slug,
         type: ChannelType.GuildText, parent: category.id,
         topic: 'Katalog pojazdów • ' + group.slug + ' • Noisiak Store',
         permissionOverwrites: [{ id: guild.client.user.id, allow: ALLOW_BOT }],
@@ -95,6 +97,11 @@ export async function ensureVehicleGallery(guild) {
       console.log('[POJAZDY] Kanal ' + group.slug + ' utworzony: ' + channel.id);
     } else {
       console.log('[POJAZDY] Uzywam istniejacego ' + channel.name);
+    }
+    if (channel.parentId === category.id && channel.name === group.emoji + '--' + group.slug) {
+      channel = await channel.setName(group.emoji + '│' + group.slug,
+        'Wyrownanie wygladu nowo utworzonych kanalow pojazdow');
+      console.log('[POJAZDY] Poprawiono nazwe: ' + channel.name);
     }
     mapping.set(group.slug, channel);
   }
