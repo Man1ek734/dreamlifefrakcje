@@ -2,7 +2,7 @@ import http from 'node:http';
 import { CHANNELS, MANAGED_SLUGS, makeReport } from './catalog.js';
 
 const apiUrl = 'https://discord.com/api/v10';
-const token = process.env.DISCORD_BOT_TOKEN?.trim();
+const token = process.env.DISCORD_BOT_TOKEN?.trim() || process.env.DISCORD_TOCKEN?.trim();
 const guildId = process.env.DISCORD_GUILD_ID?.trim();
 const applicationId = process.env.DISCORD_APPLICATION_ID?.trim() || '1570864803789144213';
 const mode = process.argv[2] || 'serve';
