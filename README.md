@@ -57,3 +57,7 @@ Synchronizacja nie tworzy ŻADNYCH nowych kanałów ani automatycznych postów w
 ### Ceny (2026-11-13)
 
 Cennik pojazdów frakcyjnych podniesiono ponownie o 20% (zaokrąglenie do pełnych 100). W wiadomościach pojawia się teraz wyłącznie etykieta `Cena:`, bez dopisku `IC`. Bot edytuje istniejące 53 wiadomości, pozostawia zdjęcia i nie publikuje nowych postów ani nie tworzy kanałów.
+
+### Podwyżka cen (2026-11-13)
+
+Podniesiono ponownie wszystkie 53 ceny o 40% względem poprzednich kwot, zaokrąglając do 100. Etykieta w wiadomościach pozostaje `Cena:`. Obrazy i istniejące kanały nie są nadpisywane ani powielane.

@@ -20,6 +20,6 @@ test('prices for all 53 shop models', async () => {
   for(const product of data) {
     assert.ok(Number.isInteger(pricesData[product.name]));
     assert.ok(pricesData[product.name] >= 3000);
-    assert.ok(pricesData[product.name] <= 30000);
+    assert.ok(pricesData[product.name] <= 40000);
   }
 });
