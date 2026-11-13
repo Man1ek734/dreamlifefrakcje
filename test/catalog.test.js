@@ -4,7 +4,7 @@ import { CHANNELS, MANAGED_SLUGS, detectChannelSlug, makeReport, suggestEmojiOnl
 
 test('50 unikalnych aut w szesciu grupach', () => {
   const cars = Object.values(CHANNELS).flatMap(x => x.vehicles);
-  assert.equal(cars.length, 50);
+  assert.equal(cars.length, 53);
   assert.equal(new Set(cars).size, cars.length);
   assert.equal(MANAGED_SLUGS.length, 5);
 });

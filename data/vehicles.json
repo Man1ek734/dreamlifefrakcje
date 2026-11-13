@@ -1,6 +1,6 @@
 {
   "source": "https://store.noisiak.com/category/2957657",
-  "note": "Wstepny podzial z poprzedniej listy, wymaga sprawdzenia z aktualnym katalogiem. Nie jest publikowany na Discordzie.",
+  "note": "53 zweryfikowane modele na stronie Noisiak Store, bez 5 pakietow zbiorczych. Zrodlo obrazow: data/product_gallery.json",
   "categories": {
     "off-road": {
       "emoji": "🚙",
@@ -8,9 +8,11 @@
         "Scout 2020",
         "Scout 2013",
         "Scout ST 2025",
+        "Alamo 2700LX",
+        "Granger 3700LX",
         "Dorado A/C",
         "Yosemite 2500HD",
-        "Sadler LT-450 Super",
+        "Sadler LT-450 Super Duty",
         "Sadler LT-450",
         "Bison XL",
         "Warden",
@@ -67,6 +69,7 @@
       "emoji": "🏎️",
       "vehicles": [
         "Ignus",
+        "Tempesta",
         "Coquette D10",
         "Obey 10F WB",
         "Sultan RS",

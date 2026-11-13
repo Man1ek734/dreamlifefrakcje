@@ -2,6 +2,7 @@ import http from 'node:http';
 import { ActivityType, Client, Events, GatewayIntentBits } from 'discord.js';
 import { CHANNELS, MANAGED_SLUGS, makeReport } from './catalog.js';
 import { ensureShop, handleTicketInteraction } from './tickets.js';
+import { ensureVehicleGallery } from './vehicleGallery.js';
 
 const apiUrl = 'https://discord.com/api/v10';
 const token = process.env.DISCORD_BOT_TOKEN?.trim() || process.env.DISCORD_TOCKEN?.trim();
@@ -71,10 +72,7 @@ async function start() {
 
   const client = new Client({
     intents: [GatewayIntentBits.Guilds],
-    presence: {
-      status: 'online',
-      activities: [{ name: 'zakupy pojazdów • DreamLife', type: ActivityType.Watching }]
-    }
+    presence: { status: 'online', activities: [] }
   });
 
   async function synchronize() {
@@ -98,6 +96,13 @@ async function start() {
       state.status = shop.ready ? 'ready' : 'missing_permissions';
       if (shop.ready) console.log('[SKLEP] Panel: https://discord.com/channels/' +
         guildId + '/' + shop.panelChannelId);
+
+      const gallery = await ensureVehicleGallery(guild);
+      state.galleryReady = gallery.ready;
+      state.galleryPublished = gallery.posted;
+      state.galleryFailed = gallery.failed || 0;
+      console.log('[KATALOG] Udostepniono galerie pojazdow: ' +
+        (gallery.posted + (gallery.skipped || 0)) + ' z 53 modeli.');
     } catch (error) {
       state.inGuild = false;
       state.shopReady = false;
@@ -120,10 +125,7 @@ async function start() {
     }
     state.online = true;
     state.status = 'online';
-    ready.user.setPresence({
-      status: 'online',
-      activities: [{ name: 'zakupy pojazdów • DreamLife', type: ActivityType.Watching }]
-    });
+    ready.user.setPresence({ status: 'online', activities: [] });
     console.log('[ONLINE] Zalogowano bota ' + ready.user.tag + ' (' + ready.user.id + ')');
     await synchronize();
   });

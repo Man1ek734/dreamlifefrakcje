@@ -33,3 +33,9 @@ Jeśli bot jest online, ale logi zwracają 403, trzeba dodać go na wskazany ser
 - npm test — testy
 
 Lista pojazdów w data/vehicles.json pozostaje robocza, bez automatycznej publikacji.
+
+## Galeria aut ze zdjęciami
+
+Pełne 53 modele z kategorii Noisiak Store są w `data/product_gallery.json`. Dodatkowa kategoria `pojazdy-transportowe` mieści Burrito. Przy uruchomieniu bot tworzy (albo odnajduje) kategorię `━━ 🚘・POJAZDY FRAKCYJNE ━━` i sześć kanałów, zachowując istniejące nazwy. Każdy model wysyła jako osobny wpis: ramka z nazwą oraz rzeczywiste zdjęcia od autora (1–3 obrazy, zależnie od dostępności). Obrazki są kompresowane do JPEG i publikowane jako załączniki, dzięki czemu Discord układa je obok siebie. Wpisy nie są duplikowane po restarcie; sprawdzane są wiadomości własnego bota.
+
+Status online bota pozostaje bez widocznej aktywności tekstowej.
