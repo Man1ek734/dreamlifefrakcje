@@ -201,9 +201,14 @@ async function createTicket(interaction) {
       ] }
     ];
     const staffId = process.env.DISCORD_TICKET_STAFF_ROLE_ID?.trim();
-    if (staffId && guild.roles.cache.has(staffId)) {
+    if (staffId) {
+      // Fetch from Discord instead of relying on a possibly cold local role cache.
+      const staffRole = await guild.roles.fetch(staffId).catch(() => null);
+      if (!staffRole) {
+        throw new Error('Brak roli obslugi ticketow na serwerze: ' + staffId);
+      }
       permissions.push({
-        id: staffId, allow: [
+        id: staffRole.id, allow: [
           PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages,
           PermissionFlagsBits.ReadMessageHistory
         ]

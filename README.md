@@ -63,3 +63,7 @@ Cennik pojazdów frakcyjnych podniesiono ponownie o 20% (zaokrąglenie do pełny
 Podniesiono ponownie wszystkie 53 ceny o 40% względem poprzednich kwot, zaokrąglając do 100. Etykieta w wiadomościach pozostaje `Cena:`. Obrazy i istniejące kanały nie są nadpisywane ani powielane.
 
 Wdrozenie cennika 40%: ponowienie buildu Railway po przejsciowym bledzie etapu BUILD_IMAGE.
+
+## Dostęp obsługi do ticketów (2026-11-13)
+
+Rola obsługi o ID `1570894398563029113` jest ustawiona jako `DISCORD_TICKET_STAFF_ROLE_ID` w Railway. W trakcie tworzenia nowego prywatnego ticketu bot weryfikuje istnienie roli, a następnie nadaje jej `ViewChannel`, `SendMessages` i `ReadMessageHistory`. Pozostałe role bez indywidualnych zezwoleń nie uzyskują dostępu. Nie zmieniamy istniejących kanałów pojazdów ani nie tworzymy nowych poza ticketami otwieranymi przyciskiem użytkownika.
