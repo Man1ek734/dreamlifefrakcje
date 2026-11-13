@@ -94,12 +94,12 @@ export async function ensureVehicleGallery(guild) {
   // Nigdy nie tworz nowych kategorii ani nowych kanalow.
   const me = await guild.members.fetchMe();
   if (!me.permissions.has(PermissionFlagsBits.ViewChannel)) {
-    return { ready: false, posted: 0, updated: 0, deleted: 0, failed: 53,
+    return { ready: false, posted: 0, updated: 0, deleted: 0, failed: 52,
       reason: 'No ViewChannel permission' };
   }
 
   const products = catalogue.products;
-  if (products.length !== 53 || new Set(products.map(p => p.id)).size !== 53 ||
+  if (products.length !== 52 || new Set(products.map(p => p.id)).size !== 52 ||
       products.some(p => !Number.isInteger(prices[p.name]) || prices[p.name] <= 0)) {
     throw new Error('Katalog albo cennik IC jest niekompletny');
   }

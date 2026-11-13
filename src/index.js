@@ -5,6 +5,7 @@ import { ensureShop, handleTicketInteraction } from './tickets.js';
 import { ensureVehicleGallery } from './vehicleGallery.js';
 import { ensureAlamoPhoto } from './alamoPhoto.js';
 import { repairMissingVehiclePhotos } from './repairMissingVehiclePhotos.js';
+import { removeVigeroZX } from './removeVigeroZX.js';
 
 const apiUrl = 'https://discord.com/api/v10';
 const token = process.env.DISCORD_BOT_TOKEN?.trim() || process.env.DISCORD_TOCKEN?.trim();
@@ -99,12 +100,16 @@ async function start() {
       if (shop.ready) console.log('[SKLEP] Panel: https://discord.com/channels/' +
         guildId + '/' + shop.panelChannelId);
 
+      const removedVigero = await removeVigeroZX(guild);
+      state.vigeroZXRemoved = removedVigero.confirmed;
+      state.vigeroZXRemovedCount = removedVigero.deleted;
+
       const gallery = await ensureVehicleGallery(guild);
       state.galleryReady = gallery.ready;
       state.galleryPublished = gallery.posted;
       state.galleryFailed = gallery.failed || 0;
       console.log('[KATALOG] Udostepniono galerie pojazdow: ' +
-        (gallery.posted + (gallery.updated || 0) + (gallery.skipped || 0)) + ' z 53 modeli.');
+        (gallery.posted + (gallery.updated || 0) + (gallery.skipped || 0)) + ' z 52 modeli.');
 
       const alamoPhoto = await ensureAlamoPhoto(guild);
       state.alamoPhotoUpdated = alamoPhoto.success;

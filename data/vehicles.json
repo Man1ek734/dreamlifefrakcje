@@ -1,6 +1,6 @@
 {
   "source": "https://store.noisiak.com/category/2957657",
-  "note": "53 zweryfikowane modele na stronie Noisiak Store, bez 5 pakietow zbiorczych. Zrodlo obrazow: data/product_gallery.json",
+  "note": "52 modeli dostępnych w katalogu Discord; Vigero ZX celowo wykluczony na życzenie właściciela serwera.",
   "categories": {
     "off-road": {
       "emoji": "🚙",
@@ -61,7 +61,6 @@
         "Buffalo STX",
         "Dominator GT DCL",
         "Dominator GTX",
-        "Vigero ZX",
         "Gauntlet Hellfire"
       ]
     },

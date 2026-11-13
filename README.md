@@ -71,3 +71,7 @@ Rola obsługi o ID `1570894398563029113` jest ustawiona jako `DISCORD_TICKET_STA
 ## Alamo 2700LX — indywidualne zdjecie
 
 Bot zastępuje zdjęcia WYŁĄCZNIE w istniejącej wiadomości modelu Alamo 2700LX na kanale off-road, używając zdjęcia przesłanego przez użytkownika (`assets/alamo_2700lx_user.webp`). Zostają nazwa, cena i ID wiadomości; nie powstaje nowy post ani kanał. Operacja jest jednorazowa (po restarcie pomijana), jej wykonanie potwierdza wpis `[ALAMO] PODMIENIONO ZDJECIE` w logach Railway.
+
+## Usunięcie Vigero ZX (2026-11-13)
+
+Pojazd **Vigero ZX** wyłączony z katalogu — po usunięciu jego jedynej wiadomości przez bota nie jest odtwarzany. Katalog liczy 52 auta. Bot nie tworzy dodatkowych postów ani kanałów; pozostałe modele, ceny i zdjęcia są nietknięte.

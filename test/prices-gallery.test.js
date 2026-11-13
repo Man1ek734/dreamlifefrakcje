@@ -9,14 +9,16 @@ test('no channel creation in vehicle gallery', async () => {
   assert.match(src, /duplicateMadeByBot/);
   assert.match(src, /previous\.edit/);
 });
-test('prices for all 53 shop models', async () => {
+test('prices for all 52 shop models', async () => {
   const [catalogue,prices] = await Promise.all([
     fs.readFile(new URL('../data/product_gallery.json', import.meta.url), 'utf8'),
     fs.readFile(new URL('../data/prices_ic.json', import.meta.url), 'utf8')
   ]);
   const data = JSON.parse(catalogue).products;
   const pricesData=JSON.parse(prices);
-  assert.equal(data.length,53);
+  assert.equal(data.length,52);
+  assert.ok(!data.some(p => p.name === 'Vigero ZX'));
+  assert.ok(!('Vigero ZX' in pricesData));
   for(const product of data) {
     assert.ok(Number.isInteger(pricesData[product.name]));
     assert.ok(pricesData[product.name] >= 3000);

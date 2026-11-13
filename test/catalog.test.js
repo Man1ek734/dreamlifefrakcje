@@ -2,9 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CHANNELS, MANAGED_SLUGS, detectChannelSlug, makeReport, suggestEmojiOnlyName } from '../src/catalog.js';
 
-test('50 unikalnych aut w szesciu grupach', () => {
+test('52 unikalne auta w szesciu grupach', () => {
   const cars = Object.values(CHANNELS).flatMap(x => x.vehicles);
-  assert.equal(cars.length, 53);
+  assert.equal(cars.length, 52);
+  assert.ok(!cars.includes('Vigero ZX'));
   assert.equal(new Set(cars).size, cars.length);
   assert.equal(MANAGED_SLUGS.length, 5);
 });
