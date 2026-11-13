@@ -43,3 +43,9 @@ Status online bota pozostaje bez widocznej aktywności tekstowej.
 ## Bez duplikowania kategorii (2026-11-13)
 
 Bot nie tworzy juz zadnych nowych kanalow pojazdow. Korzysta wylacznie z pierwszego kompletu szesciu kanalow o zapisanych identyfikatorach. Kanaly powielone przez poprzednia wersje (wewnatrz kategorii POJAZDY FRAKCYJNE) sa automatycznie usuwane. Oryginalne wpisy zachowuja zalaczniki ze zdjeciami, bot tylko dopisuje w tresci ceny IC. Jesli brakuje wpisu, zostanie wyslany jedynie do oryginalnego kanalu. Cennik mozna edytowac w data/prices_ic.json; sa to ceny wirtualne wewnatrz gry, nie ceny realne sklepu.
+
+## Tickety i usuwanie duplikatow (2026-11-13)
+
+W katalogu zostaje tylko pierwszy komplet szesciu kanalow; 12 znanych duplikatow poprzedniego bota jest usuwanych po starcie. Bot nie tworzy ponownie kategorii zakupow ani kanalow pojazdow. Ceny IC wszystkich 53 pojazdow zwiekszono o 15% i zaokraglono do 100 $. Edycja postow nie usuwa ich fotografii.
+
+Nowe tickety maja nazwy `ticket-1`, `ticket-2` itd. Nastepny numer jest rezerwowany i zapisywany w temacie istniejacego kanalu panelu (pole `dlshop-next:N`), dlatego nie resetuje sie po zamknieciu ticketu ani po restarcie bota. Kazdy czlonek majacy dostep do ticketu moze go zamknac przyciskiem po potwierdzeniu.

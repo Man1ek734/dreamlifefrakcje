@@ -10,6 +10,35 @@ const CLOSE_ID = 'dreamlife_shop_close_v1';
 const CONFIRM_ID = 'dreamlife_shop_confirm_close_v1';
 const CANCEL_ID = 'dreamlife_shop_cancel_close_v1';
 const ACTIVE = new Set();
+const SHOP_CATEGORY_ID = '1570871157870166179';
+const SHOP_CHANNEL_ID = '1570871160264986754';
+// Globalna kolejka rezerwacji numerow, aby rownoczesne tickety nie otrzymaly tego samego numeru.
+let numberingQueue = Promise.resolve();
+
+async function reserveTicketNumber(guild, panel) {
+  const work = numberingQueue.then(async () => {
+    const refreshed = await panel.fetch();
+    const stored = /(?:^|\s)dlshop-next:(\d+)/u.exec(refreshed.topic || '');
+    const all = await guild.channels.fetch();
+    let highest = 0;
+    for (const item of all.values()) {
+      if (item?.type !== ChannelType.GuildText) continue;
+      const match = /^ticket-(\d+)$/u.exec(item.name);
+      if (match) highest = Math.max(highest, Number(match[1]));
+    }
+    const next = Math.max(stored ? Number(stored[1]) : 1, highest + 1);
+    if (!Number.isSafeInteger(next) || next < 1) {
+      throw new Error('Nie mozna nadac nastepnego numeru ticketu');
+    }
+    // Licznik zapisany na Discordzie przed stworzeniem ticketu: przetrwa restart i usuwanie.
+    const base = (refreshed.topic || '').replace(/\s*\|\s*dlshop-next:\d+\b/gu, '').trim();
+    await refreshed.setTopic(base + ' | dlshop-next:' + (next + 1),
+      'Zapis numeru nastepnego ticketu DreamLife');
+    return next;
+  });
+  numberingQueue = work.then(() => undefined, () => undefined);
+  return work;
+}
 
 const button = (id, label, style, emoji) =>
   new ButtonBuilder().setCustomId(id).setLabel(label).setStyle(style).setEmoji(emoji);
@@ -83,24 +112,14 @@ export async function ensureShop(guild) {
     return { ready: false, reason: 'Missing permissions: ' + missing.join(', ') };
   }
 
-  let channels = await fetchChannels(guild);
-  let category = selectShopCategory(channels);
-  if (!category) {
-    category = await guild.channels.create({
-      name: CATEGORY_NAME, type: ChannelType.GuildCategory,
-      reason: 'DreamLife Frakcje — strefa zakupów'
-    });
-    console.log('[SKLEP] Utworzono kategorie: ' + category.id);
-  }
-  channels = await fetchChannels(guild);
-  let panelChannel = selectPanel(channels, category.id);
-  if (!panelChannel) {
-    panelChannel = await guild.channels.create({
-      name: CHANNEL_NAME, type: ChannelType.GuildText, parent: category.id,
-      topic: 'DreamLife Frakcje — centrum zakupów pojazdów. Ticket utworzysz przyciskiem.',
-      reason: 'DreamLife Frakcje — kanal do zamowien'
-    });
-    console.log('[SKLEP] Utworzono kanal: ' + panelChannel.id);
+  // Panel i kategoria zakupow juz istnieja. Bot nigdy nie tworzy ich ponownie.
+  const category = await guild.channels.fetch(SHOP_CATEGORY_ID).catch(() => null);
+  const panelChannel = await guild.channels.fetch(SHOP_CHANNEL_ID).catch(() => null);
+  if (!category || category.type !== ChannelType.GuildCategory ||
+      !panelChannel || panelChannel.type !== ChannelType.GuildText ||
+      panelChannel.parentId !== category.id) {
+    console.log('[SKLEP] Brak oryginalnej kategorii albo kanalu. Nie tworze duplikatow.');
+    return { ready: false, reason: 'Existing shop channels not found' };
   }
 
   const channelPerms = panelChannel.permissionsFor(me);
@@ -124,7 +143,7 @@ export async function ensureShop(guild) {
 }
 
 function ticketOwner(channel) {
-  const match = /^dlshop-owner:(\d{17,20});active$/u.exec(channel.topic || '');
+  const match = /^dlshop-owner:(\d{17,20});active(?:;number:\d+)?$/u.exec(channel.topic || '');
   return match?.[1] || null;
 }
 
@@ -160,10 +179,13 @@ async function createTicket(interaction) {
       return interaction.editReply({ content: 'Masz już otwarty ticket: <#' + existing.id + '>' });
     }
 
-    const category = selectShopCategory(channels);
-    if (!category) return interaction.editReply({ content: 'Panel zakupów nie jest jeszcze skonfigurowany.' });
+    const category = await guild.channels.fetch(SHOP_CATEGORY_ID).catch(() => null);
+    const panel = await guild.channels.fetch(SHOP_CHANNEL_ID).catch(() => null);
+    if (!category || !panel || panel.parentId !== category.id) {
+      return interaction.editReply({ content: 'Panel zakupów nie jest jeszcze skonfigurowany.' });
+    }
 
-    const userKey = interaction.user.id.slice(-7);
+    const ticketNumber = await reserveTicketNumber(guild, panel);
     const permissions = [
       { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
       {
@@ -189,11 +211,11 @@ async function createTicket(interaction) {
     }
 
     const ticket = await guild.channels.create({
-      name: 'ticket-' + userKey,
+      name: 'ticket-' + ticketNumber,
       type: ChannelType.GuildText,
       parent: category.id,
       permissionOverwrites: permissions,
-      topic: 'dlshop-owner:' + interaction.user.id + ';active',
+      topic: 'dlshop-owner:' + interaction.user.id + ';active;number:' + ticketNumber,
       reason: 'Ticket zakupowy DreamLife Frakcje'
     });
     await ticket.send({
@@ -205,7 +227,7 @@ async function createTicket(interaction) {
       ],
       allowedMentions: { parse: [] }
     });
-    console.log('[TICKET] Utworzono ticket ' + ticket.id + ' dla ' + interaction.user.id);
+    console.log('[TICKET] Utworzono ticket-' + ticketNumber + ': ' + ticket.id + ' dla ' + interaction.user.id);
     return interaction.editReply({ content: '✅ Utworzyłem Twój prywatny ticket: <#' + ticket.id + '>' });
   } catch (error) {
     console.error('[TICKET] Blad tworzenia: ' + error.message);
@@ -221,9 +243,8 @@ async function closeTicket(interaction, confirm) {
   const channel = interaction.channel;
   const owner = ticketOwner(channel);
   if (!owner) return interaction.reply({ content: 'To nie jest aktywny ticket zakupowy.', flags: MessageFlags.Ephemeral });
-  const isAuthorized = interaction.user.id === owner ||
-    interaction.memberPermissions?.has(PermissionFlagsBits.ManageChannels);
-  if (!isAuthorized) return interaction.reply({ content: 'Nie możesz zamknąć tego ticketu.', flags: MessageFlags.Ephemeral });
+  // Kazdy czlonek majacy dostep do tego prywatnego kanalu moze nacisnac przycisk.
+  // Interakcje z przyciskami Discord sa mozliwe tylko przy dostepie do kanalu.
 
   if (!confirm) {
     return interaction.reply({

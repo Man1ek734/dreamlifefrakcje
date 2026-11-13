@@ -18,16 +18,8 @@ const ALLOW_BOT = [
   PermissionFlagsBits.AttachFiles
 ];
 const codeFence = String.fromCharCode(96).repeat(3);
-const titleOf = (name, price) => codeFence + '\n' + name + '\nCena IC: 
+const titleOf = (name, price) => codeFence + '\n' + name + '\nCena IC: ' + String.fromCharCode(36) + price.toLocaleString('en-US').replaceAll(',', ' ') + '\n' + codeFence;
 
-function isGroup(channel, slug) {
-  if (!channel || channel.type !== ChannelType.GuildText) return false;
-  if (detectChannelSlug(channel.name) === slug) return true;
-  const group = GROUPS.find(g => g.slug === slug);
-  if (group && channel.name === group.emoji + '--' + slug) return true;
-  if (slug !== 'pojazdy-transportowe') return false;
-  return channel.name.split(/[|│｜]/u).at(-1).trim() === slug;
-}
 function validImage(url) {
   try {
     const u = new URL(url);
@@ -89,10 +81,9 @@ function duplicateMadeByBot(channel) {
     return false;
   }
   if (Object.values(KEEP).includes(channel.id)) return false;
-  if (KNOWN_EXTRA.has(channel.id)) return true;
-  // Tylko wzor nazw automatycznie nadany przez poprzednia wersje bota.
-  return GROUPS.some(g => channel.name === g.emoji + '--' + g.slug ||
-    channel.name === g.emoji + '│' + g.slug);
+  // Usuwamy tylko 12 udokumentowanych duplikatów utworzonych przez tę aplikację.
+  // Nie dotykamy innych kanałów, nawet jeśli mają identyczną nazwę.
+  return KNOWN_EXTRA.has(channel.id);
 }
 
 export async function ensureVehicleGallery(guild) {
@@ -172,7 +163,7 @@ export async function ensureVehicleGallery(guild) {
         if (previous.content.trim() === desired.trim()) { skipped++; continue; }
         try {
           // Edytowanie WYŁĄCZNIE tresci: istniejace zalaczniki (zdjecia) zostaja.
-          await previous.edit({ content: desired, allowedMentions: { parse: [] } });
+          await previous.edit({ content: desired, attachments: [...previous.attachments.values()].map(a => ({ id: a.id })), allowedMentions: { parse: [] } });
           updated++;
           console.log('[CENA IC] ' + product.name + ': $' + price + ' (edycja wpisu)');
         } catch (error) {
