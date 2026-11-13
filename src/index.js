@@ -3,6 +3,7 @@ import { ActivityType, Client, Events, GatewayIntentBits } from 'discord.js';
 import { CHANNELS, MANAGED_SLUGS, makeReport } from './catalog.js';
 import { ensureShop, handleTicketInteraction } from './tickets.js';
 import { ensureVehicleGallery } from './vehicleGallery.js';
+import { ensureAlamoPhoto } from './alamoPhoto.js';
 
 const apiUrl = 'https://discord.com/api/v10';
 const token = process.env.DISCORD_BOT_TOKEN?.trim() || process.env.DISCORD_TOCKEN?.trim();
@@ -103,6 +104,10 @@ async function start() {
       state.galleryFailed = gallery.failed || 0;
       console.log('[KATALOG] Udostepniono galerie pojazdow: ' +
         (gallery.posted + (gallery.updated || 0) + (gallery.skipped || 0)) + ' z 53 modeli.');
+
+      const alamoPhoto = await ensureAlamoPhoto(guild);
+      state.alamoPhotoUpdated = alamoPhoto.success;
+      state.alamoPhotoMessageId = alamoPhoto.messageId || null;
     } catch (error) {
       state.inGuild = false;
       state.shopReady = false;

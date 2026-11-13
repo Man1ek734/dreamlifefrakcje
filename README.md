@@ -67,3 +67,7 @@ Wdrozenie cennika 40%: ponowienie buildu Railway po przejsciowym bledzie etapu B
 ## Dostęp obsługi do ticketów (2026-11-13)
 
 Rola obsługi o ID `1570894398563029113` jest ustawiona jako `DISCORD_TICKET_STAFF_ROLE_ID` w Railway. W trakcie tworzenia nowego prywatnego ticketu bot weryfikuje istnienie roli, a następnie nadaje jej `ViewChannel`, `SendMessages` i `ReadMessageHistory`. Pozostałe role bez indywidualnych zezwoleń nie uzyskują dostępu. Nie zmieniamy istniejących kanałów pojazdów ani nie tworzymy nowych poza ticketami otwieranymi przyciskiem użytkownika.
+
+## Alamo 2700LX — indywidualne zdjecie
+
+Bot zastępuje zdjęcia WYŁĄCZNIE w istniejącej wiadomości modelu Alamo 2700LX na kanale off-road, używając zdjęcia przesłanego przez użytkownika (`assets/alamo_2700lx_user.webp`). Zostają nazwa, cena i ID wiadomości; nie powstaje nowy post ani kanał. Operacja jest jednorazowa (po restarcie pomijana), jej wykonanie potwierdza wpis `[ALAMO] PODMIENIONO ZDJECIE` w logach Railway.
