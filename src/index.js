@@ -1,5 +1,7 @@
 import http from 'node:http';
+import { ActivityType, Client, Events, GatewayIntentBits } from 'discord.js';
 import { CHANNELS, MANAGED_SLUGS, makeReport } from './catalog.js';
+import { ensureShop, handleTicketInteraction } from './tickets.js';
 
 const apiUrl = 'https://discord.com/api/v10';
 const token = process.env.DISCORD_BOT_TOKEN?.trim() || process.env.DISCORD_TOCKEN?.trim();
@@ -7,81 +9,149 @@ const guildId = process.env.DISCORD_GUILD_ID?.trim();
 const applicationId = process.env.DISCORD_APPLICATION_ID?.trim() || '1570864803789144213';
 const mode = process.argv[2] || 'serve';
 const port = Number(process.env.PORT || 3000);
-const totalCars = Object.values(CHANNELS).reduce((sum, group) => sum + group.vehicles.length, 0);
-const state = { connected: false, lastCheck: null, error: null, channelCount: 0 };
+const catalogCars = Object.values(CHANNELS).reduce((n,x) => n + x.vehicles.length, 0);
+const state = {
+  online: false, inGuild: false, shopReady: false, status: 'starting',
+  error: null, lastCheck: null, mappedChannels: 0, panelChannelId: null
+};
+let syncing = false;
 
 async function api(route, method = 'GET', body) {
-  const response = await fetch(apiUrl + route, {
+  const res = await fetch(apiUrl + route, {
     method,
-    headers: {
-      Authorization: 'Bot ' + token,
-      ...(body ? { 'Content-Type': 'application/json' } : {})
-    },
+    headers: { Authorization: 'Bot ' + token,
+      ...(body ? { 'Content-Type': 'application/json' } : {}) },
     body: body ? JSON.stringify(body) : undefined,
     signal: AbortSignal.timeout(15000)
   });
-  if (!response.ok) throw new Error('Discord API HTTP ' + response.status + ' (' + method + ' ' + route + ')');
-  return response.status === 204 ? null : response.json();
+  if (!res.ok) throw new Error('Discord API HTTP ' + res.status + ' ' + method + ' ' + route);
+  return res.status === 204 ? null : res.json();
 }
 
-async function inspect() {
-  if (!token || !guildId) throw new Error('Ustaw DISCORD_BOT_TOKEN i DISCORD_GUILD_ID w Railway Variables');
+async function inspectOnly() {
+  if (!token || !guildId) throw new Error('Brakuje DISCORD_BOT_TOKEN lub DISCORD_GUILD_ID');
   const bot = await api('/users/@me');
-  if (bot.id !== applicationId) throw new Error('Podany token nie nalezy do aplikacji Discord ' + applicationId);
+  if (bot.id !== applicationId) throw new Error('Token innej aplikacji Discord: ' + bot.id);
   const report = makeReport(await api('/guilds/' + guildId + '/channels'));
-  state.connected = true;
-  state.lastCheck = new Date().toISOString();
-  state.error = null;
-  state.channelCount = report.matches.length;
-  console.log('[READ ONLY] Bot ' + bot.username + ', serwer ' + guildId);
-  for (const item of report.matches) {
-    console.log('  ' + item.name + ' — ' + item.cars + ' aut' +
-      (item.suggestedName ? ' — opcjonalne emoji: ' + item.suggestedName : ''));
+  console.log('[KATALOG] ' + bot.username + ': ' + report.matches.length + ' kanalow. Bez zmian.');
+  for (const c of report.matches) console.log('  ' + c.name + ': ' + c.cars + ' aut');
+  if (mode === '--apply-emojis') {
+    for (const c of report.matches.filter(x => x.suggestedName)) {
+      await api('/channels/' + c.id, 'PATCH', { name: c.suggestedName });
+      console.log('[EMOJI] ' + c.name + ' -> ' + c.suggestedName);
+    }
   }
-  if (report.missing.length) console.log('[INFO] Nie znaleziono kanalow: ' + report.missing.join(', '));
-  if (report.ambiguities.length) console.log('[INFO] Zduplikowane kanaly: ' + report.ambiguities.join(', '));
   return report;
 }
 
-async function runOnce() {
-  const report = await inspect();
-  if (mode !== '--apply-emojis') {
-    console.log('[PODGLAD] Zero wiadomosci, zero zmian na Discordzie.');
-    return;
-  }
-  // To jest jedyna operacja edytowania: WYLACZNIE pole name, WYLACZNIE zamiana emoji.
-  for (const item of report.matches.filter(x => x.suggestedName)) {
-    await api('/channels/' + item.id, 'PATCH', { name: item.suggestedName });
-    console.log('[EMOJI] ' + item.name + ' -> ' + item.suggestedName);
-  }
-  console.log('[ZAKONCZONO] Nic nie opublikowano na serwerze.');
-}
-
-if (mode !== 'serve') {
-  runOnce().catch(error => { console.error('[ERROR] ' + error.message); process.exitCode = 1; });
-} else {
-  http.createServer((request, response) => {
+async function start() {
+  const server = http.createServer((request, response) => {
     if (request.method !== 'GET' || !['/', '/health'].includes(request.url)) {
-      response.writeHead(404).end('Not Found');
+      response.writeHead(404).end('Not found');
       return;
     }
-    response.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
-    response.end(JSON.stringify({ service: 'dreamlifefrakcje',
-      status: state.connected ? 'ready' : token && guildId ? 'checking' : 'setup_required',
-      sendsMessages: false, changesChannels: false, catalogCars: totalCars,
-      mappedChannels: state.channelCount, lastCheck: state.lastCheck, error: state.error }));
-  }).listen(port, '0.0.0.0', () => {
-    console.log('[START] Tryb tylko do odczytu. Port: ' + port + '. Wiadomosci: 0.');
-    console.log('[CATALOG] ' + MANAGED_SLUGS.length + ' kanalow, ' + totalCars + ' pojazdow.');
-    if (!token || !guildId) console.log('[SETUP] Brakuje DISCORD_BOT_TOKEN lub DISCORD_GUILD_ID.');
-  });
-  if (token && guildId) {
-    const check = () => inspect().catch(error => {
-      state.connected = false;
-      state.error = error.message;
-      console.error('[ERROR] ' + error.message);
+    response.writeHead(200, {
+      'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store'
     });
-    check();
-    setInterval(check, 30 * 60 * 1000).unref();
+    response.end(JSON.stringify({
+      service: 'dreamlifefrakcje', ...state, catalogCars,
+      shopAutoSetup: true, categoryNamesPreserved: true
+    }));
+  });
+  server.listen(port, '0.0.0.0', () => {
+    console.log('[HTTP] Ready on port ' + port);
+  });
+
+  if (!token || !guildId) {
+    state.status = 'setup_required';
+    state.error = 'Brakuje zmiennych tokenu lub ID serwera Discord.';
+    console.log('[SETUP] ' + state.error);
+    return;
   }
+
+  const client = new Client({
+    intents: [GatewayIntentBits.Guilds],
+    presence: {
+      status: 'online',
+      activities: [{ name: 'zakupy pojazdów • DreamLife', type: ActivityType.Watching }]
+    }
+  });
+
+  async function synchronize() {
+    if (!client.isReady() || syncing) return;
+    syncing = true;
+    try {
+      const guild = client.guilds.cache.get(guildId) ||
+        await client.guilds.fetch(guildId);
+      state.inGuild = true;
+      const channels = await guild.channels.fetch();
+      const report = makeReport(channels);
+      state.mappedChannels = report.matches.length;
+      state.lastCheck = new Date().toISOString();
+      console.log('[KATALOG] ' + report.matches.length +
+        ' / ' + MANAGED_SLUGS.length + ' kategorii aut — bez zmian.');
+
+      const shop = await ensureShop(guild);
+      state.shopReady = shop.ready;
+      state.panelChannelId = shop.panelChannelId || null;
+      state.error = shop.ready ? null : shop.reason;
+      state.status = shop.ready ? 'ready' : 'missing_permissions';
+      if (shop.ready) console.log('[SKLEP] Panel: https://discord.com/channels/' +
+        guildId + '/' + shop.panelChannelId);
+    } catch (error) {
+      state.inGuild = false;
+      state.shopReady = false;
+      state.error = error.message;
+      state.status = 'guild_access_required';
+      console.error('[DOSTEP] ' + error.message +
+        '. Sprawdz, czy bot zostal dodany na serwer oraz ma uprawnienia.');
+    } finally {
+      syncing = false;
+    }
+  }
+
+  client.once(Events.ClientReady, async ready => {
+    if (ready.user.id !== applicationId) {
+      state.status = 'incorrect_bot_token';
+      state.error = 'Token jest przypisany do innej aplikacji niz ' + applicationId;
+      console.error('[TOKEN] ' + state.error);
+      await client.destroy();
+      return;
+    }
+    state.online = true;
+    state.status = 'online';
+    ready.user.setPresence({
+      status: 'online',
+      activities: [{ name: 'zakupy pojazdów • DreamLife', type: ActivityType.Watching }]
+    });
+    console.log('[ONLINE] Zalogowano bota ' + ready.user.tag + ' (' + ready.user.id + ')');
+    await synchronize();
+  });
+
+  client.on(Events.GuildCreate, async guild => {
+    if (guild.id === guildId) await synchronize();
+  });
+  client.on(Events.InteractionCreate, async interaction => {
+    await handleTicketInteraction(interaction, guildId);
+  });
+  client.on(Events.Error, error => console.error('[GATEWAY] ' + error.message));
+  setInterval(synchronize, 2 * 60 * 1000).unref();
+
+  try {
+    await client.login(token);
+  } catch (error) {
+    state.status = 'login_failed';
+    state.error = error.message;
+    console.error('[LOGIN] ' + error.message);
+  }
+  process.once('SIGTERM', () => {
+    client.destroy();
+    server.close();
+  });
+}
+
+if (mode === 'serve') {
+  start().catch(error => { console.error('[ERROR] ' + error.message); process.exitCode = 1; });
+} else {
+  inspectOnly().catch(error => { console.error('[ERROR] ' + error.message); process.exitCode = 1; });
 }

@@ -1,11 +1,11 @@
 {
   "name": "dreamlifefrakcje",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
-  "description": "Cichy bot Discord frakcji",
+  "description": "DreamLife Frakcje — Discord ticket shop and vehicle catalogue",
   "engines": {
-    "node": ">=20.10"
+    "node": ">=22"
   },
   "scripts": {
     "start": "node src/index.js",
@@ -13,5 +13,8 @@
     "rename:preview": "node src/index.js --preview-emojis",
     "rename:apply": "node src/index.js --apply-emojis",
     "test": "node --test"
+  },
+  "dependencies": {
+    "discord.js": "^14.28.0"
   }
 }
