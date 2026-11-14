@@ -6,6 +6,7 @@ import { ensureVehicleGallery } from './vehicleGallery.js';
 import { ensureAlamoPhoto } from './alamoPhoto.js';
 import { repairMissingVehiclePhotos } from './repairMissingVehiclePhotos.js';
 import { removeVigeroZX } from './removeVigeroZX.js';
+import { registerDodajCommand, handleDodajCommand } from './dodaj.js';
 
 const apiUrl = 'https://discord.com/api/v10';
 const token = process.env.DISCORD_BOT_TOKEN?.trim() || process.env.DISCORD_TOCKEN?.trim();
@@ -92,6 +93,15 @@ async function start() {
       console.log('[KATALOG] ' + report.matches.length +
         ' / ' + MANAGED_SLUGS.length + ' kategorii aut — bez zmian.');
 
+      // Rejestracja tylko tej jednej komendy (bez modyfikowania innych).
+      try {
+        await registerDodajCommand(guild);
+        state.dodajRegistered = true;
+      } catch (error) {
+        state.dodajRegistered = false;
+        console.error('[DODAJ] Rejestracja nieudana: ' + error.message);
+      }
+
       const shop = await ensureShop(guild);
       state.shopReady = shop.ready;
       state.panelChannelId = shop.panelChannelId || null;
@@ -150,6 +160,7 @@ async function start() {
   });
   client.on(Events.InteractionCreate, async interaction => {
     await handleTicketInteraction(interaction, guildId);
+    await handleDodajCommand(interaction, guildId);
   });
   client.on(Events.Error, error => console.error('[GATEWAY] ' + error.message));
   setInterval(synchronize, 2 * 60 * 1000).unref();

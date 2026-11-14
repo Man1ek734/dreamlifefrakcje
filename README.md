@@ -79,3 +79,7 @@ Pojazd **Vigero ZX** wyłączony z katalogu — po usunięciu jego jedynej wiado
 ## Ping roli obsługi po utworzeniu ticketu
 
 Bot przy każdym nowo utworzonym tickecie oznacza rolę `1570894398563029113` w pierwszej wiadomości, razem z dotychczasowym panelem powitalnym. `allowedMentions` obejmuje tylko tę rolę. Nie oznacza jej ponownie przy restartach ani nie wysyła powiadomień do istniejących zgłoszeń.
+
+## /dodaj — dodanie użytkownika do ticketu
+
+Wprowadzono jedną lokalną komendę serwera **`/dodaj osoba:<użytkownik>`**. Komenda działa tylko w istniejących kanałach `ticket-N` w kategorii zakupów. Właściciel ticketu lub osoba z rolą obsługi `1570894398563029113` (ewentualnie moderator z `ManageChannels`) może nadać wskazanemu członkowi serwera dostęp do czytania i pisania. Komenda odpowiada prywatnie, bez publicznych pingów i nowych wiadomości. Nie zmienia innych kanałów ani istniejących uprawnień. Rejestracja nie kasuje innych komend.
