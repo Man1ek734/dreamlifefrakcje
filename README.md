@@ -75,3 +75,7 @@ Bot zastępuje zdjęcia WYŁĄCZNIE w istniejącej wiadomości modelu Alamo 2700
 ## Usunięcie Vigero ZX (2026-11-13)
 
 Pojazd **Vigero ZX** wyłączony z katalogu — po usunięciu jego jedynej wiadomości przez bota nie jest odtwarzany. Katalog liczy 52 auta. Bot nie tworzy dodatkowych postów ani kanałów; pozostałe modele, ceny i zdjęcia są nietknięte.
+
+## Ping roli obsługi po utworzeniu ticketu
+
+Bot przy każdym nowo utworzonym tickecie oznacza rolę `1570894398563029113` w pierwszej wiadomości, razem z dotychczasowym panelem powitalnym. `allowedMentions` obejmuje tylko tę rolę. Nie oznacza jej ponownie przy restartach ani nie wysyła powiadomień do istniejących zgłoszeń.

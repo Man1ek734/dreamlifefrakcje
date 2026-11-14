@@ -11,4 +11,7 @@ test('new private tickets grant staff role access', async () => {
   assert.ok(code.includes('PermissionFlagsBits.SendMessages'));
   assert.ok(code.includes('PermissionFlagsBits.ReadMessageHistory'));
   assert.ok(code.includes("{ id: guild.id, deny: [PermissionFlagsBits.ViewChannel] }"));
+  assert.ok(code.includes("PermissionFlagsBits.MentionEveryone"));
+  assert.ok(code.includes("content: staffId ? '<@&' + staffId + '>' : undefined"));
+  assert.ok(code.includes("allowedMentions: { parse: [], roles: staffId ? [staffId] : [] }"));
 });

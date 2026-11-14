@@ -197,7 +197,9 @@ async function createTicket(interaction) {
       { id: guild.client.user.id, allow: [
         PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages,
         PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.EmbedLinks,
-        PermissionFlagsBits.ManageChannels
+        PermissionFlagsBits.ManageChannels,
+        // Rolę trzeba móc wzmiankować nawet gdy nie jest publicznie oznaczalna.
+        PermissionFlagsBits.MentionEveryone
       ] }
     ];
     const staffId = process.env.DISCORD_TICKET_STAFF_ROLE_ID?.trim();
@@ -223,15 +225,19 @@ async function createTicket(interaction) {
       topic: 'dlshop-owner:' + interaction.user.id + ';active;number:' + ticketNumber,
       reason: 'Ticket zakupowy DreamLife Frakcje'
     });
+    // Jeden ping obsługi przy tworzeniu nowego ticketu.
     await ticket.send({
+      content: staffId ? '<@&' + staffId + '>' : undefined,
       embeds: [ticketEmbed(interaction.user)],
       components: [
         new ActionRowBuilder().addComponents(
           button(CLOSE_ID, 'Zamknij ticket', ButtonStyle.Secondary, '🔒')
         )
       ],
-      allowedMentions: { parse: [] }
+      allowedMentions: { parse: [], roles: staffId ? [staffId] : [] }
     });
+    if (staffId) console.log('[TICKET] Oznaczono role ' + staffId +
+      ' w ticket-' + ticketNumber + ' (' + ticket.id + ')');
     console.log('[TICKET] Utworzono ticket-' + ticketNumber + ': ' + ticket.id + ' dla ' + interaction.user.id);
     return interaction.editReply({ content: '✅ Utworzyłem Twój prywatny ticket: <#' + ticket.id + '>' });
   } catch (error) {
